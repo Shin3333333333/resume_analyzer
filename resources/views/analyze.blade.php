@@ -89,29 +89,55 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const resumeInput = document.getElementById('resumeFile');
-            const jobDescriptionInput = document.getElementById('jobDescription');
-            const submitButton = document.getElementById('submitButton');
-            const buttonText = document.getElementById('buttonText');
-            const loadingSpinner = document.getElementById('loadingSpinner');
+    document.addEventListener('DOMContentLoaded', function () {
+    const resumeInput = document.getElementById('resumeFile');
+    const jobDescriptionInput = document.getElementById('jobDescription');
+    const submitButton = document.getElementById('submitButton');
+    const buttonText = document.getElementById('buttonText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
 
-            function validateForm() {
-                submitButton.disabled =
-                    resumeInput.files.length === 0 ||
-                    jobDescriptionInput.value.trim() === '';
-            }
+    let resumeFileValid = false;
 
-            resumeInput.addEventListener('change', validateForm);
-            jobDescriptionInput.addEventListener('input', validateForm);
+    // Allowed file types
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
 
-            document.getElementById('analysisForm').addEventListener('submit', function () {
-                submitButton.disabled = true;
-                buttonText.textContent = 'Analyzing...';
-                loadingSpinner.style.display = 'inline-block';
-            });
-        });
-        </script>
+    // Enable/disable submit button based on validation
+    function validateForm() {
+        submitButton.disabled = !resumeFileValid || jobDescriptionInput.value.trim() === '';
+    }
+
+    // File validation
+    resumeInput.addEventListener('change', function () {
+        const file = resumeInput.files[0];
+        if (!file) {
+            resumeFileValid = false;
+            validateForm();
+            return;
+        }
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(ext)) {
+            alert('Invalid file type. Please upload PDF, DOC, DOCX, or TXT.');
+            resumeInput.value = '';
+            resumeFileValid = false;
+        } else {
+            resumeFileValid = true;
+        }
+
+        validateForm();
+    });
+
+    // Job description input listener
+    jobDescriptionInput.addEventListener('input', validateForm);
+
+    // Show loading spinner on submit
+    document.getElementById('analysisForm').addEventListener('submit', function () {
+        submitButton.disabled = true;
+        buttonText.textContent = 'Analyzing...';
+        loadingSpinner.style.display = 'inline-block';
+    });
+});
+</script>
 
 
 </body>
