@@ -86,6 +86,8 @@
 
                 </div>
             </div>
+    <div id="resumeSuggestions" class="card mt-3 p-3 text-muted" style="display:none;"></div>
+
 </div>
 
 
@@ -242,8 +244,30 @@ form.addEventListener('submit', function(e) {
             return data;
         })
         .then(data => {
-            resumeContentDiv.innerHTML = data.resume.resume_content;
-        })
+                // Update resume content
+                resumeContentDiv.innerHTML = data.resume.resume_content;
+
+                // Show AI suggestions if they exist
+                let suggestionDiv = document.getElementById('resumeSuggestions');
+                if(!suggestionDiv) {
+                    // create dynamically if it doesn't exist
+                    suggestionDiv = document.createElement('div');
+                    suggestionDiv.id = 'resumeSuggestions';
+                    suggestionDiv.style.marginTop = '1rem';
+                    suggestionDiv.style.padding = '0.5rem';
+                    suggestionDiv.style.borderTop = '1px solid #dee2e6';
+                    document.getElementById('resumeContentWrapper').appendChild(suggestionDiv);
+                }
+
+                if(data.resume.suggestions) {
+                    suggestionDiv.style.display = 'block';
+                    suggestionDiv.innerHTML = "<strong>AI Suggestions:</strong><br>" + data.resume.suggestions;
+                } else {
+                    suggestionDiv.style.display = 'none';
+                }
+            })
+
+
         .catch(err => {
             console.error('Handled error:', err);
             if (err?.errors) {

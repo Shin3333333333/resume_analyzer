@@ -17,9 +17,9 @@ class ResumeAnalysisController extends Controller
     }
 
     // 🔹 AJAX VERSION (THIS IS THE IMPORTANT ONE)
-  public function storeAjax(Request $request)
+ public function storeAjax(Request $request)
 {
-    // Validate AJAX request
+    // 1️⃣ Validate AJAX request
     $validator = \Validator::make($request->all(), [
         'resume_file' => 'required|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain|max:5120',
         'job_description' => 'required|string',
@@ -36,7 +36,7 @@ class ResumeAnalysisController extends Controller
     $extension = strtolower($file->getClientOriginalExtension());
     $resumeContent = '';
 
-    // Move file to temporary path with proper extension
+    // 2️⃣ Move file to temp path
     $tempPath = sys_get_temp_dir() . '/' . uniqid() . '.' . $extension;
     $file->move(dirname($tempPath), basename($tempPath));
 
@@ -65,19 +65,16 @@ class ResumeAnalysisController extends Controller
                 throw new \Exception('Unsupported file type.');
         }
     } catch (\Exception $e) {
-        // Cleanup temp file
         @unlink($tempPath);
-
         return response()->json([
             'success' => false,
             'message' => 'Failed to read resume: ' . $e->getMessage()
         ], 500);
     }
 
-    // Delete temp file after reading
     @unlink($tempPath);
 
-    // Insert into database
+    // 3️⃣ Insert into DB (your existing logic)
     $insertResult = DB::select('CALL usp_insert_resume(?, ?, ?)', [
         1,
         $resumeContent,
@@ -85,19 +82,58 @@ class ResumeAnalysisController extends Controller
     ]);
 
     $newId = $insertResult[0]->inserted_id;
-    // Fetch result
-    $result = DB::select('CALL usp_get_resume(?, ?)', [1, $newId]); // adjust params if needed
 
+    $result = DB::select('CALL usp_get_resume(?, ?)', [1, $newId]);
     if (!$result) {
         return response()->json([
-            'success' => false, 
+            'success' => false,
             'message' => 'No resume found'
         ], 500);
     }
 
+    $resumeText = strip_tags($resumeContent); // plain text for AI
+    $jobDescription = $request->job_description;
+
+    // 4️⃣ Hugging Face AI Suggestions
+    // 4️⃣ Hugging Face AI Suggestions
+    $suggestions = 'No suggestions available.';
+    try {
+        $client = new \GuzzleHttp\Client();
+        $apiKey = env('HUGGINGFACE_API_KEY');
+
+        $response = $client->post('https://router.huggingface.co/v1/chat/completions', [
+            'headers' => [
+                'Authorization' => "Bearer $apiKey",
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                "model" => "Qwen/Qwen3-Coder-Next:novita",
+                "messages" => [
+                    [
+                        "role" => "user",
+                        "content" => "Suggest improvements to make the following resume more professional and aligned with this job description.\n\nResume:\n$resumeText\n\nJob Description:\n$jobDescription"
+                    ]
+                ],
+                "stream" => false
+            ]
+        ]);
+
+        $body = json_decode($response->getBody()->getContents(), true);
+        if (isset($body['choices'][0]['message']['content'])) {
+            $suggestions = $body['choices'][0]['message']['content'];
+        }
+    } catch (\Exception $e) {
+        \Log::error('HF AI Error: ' . $e->getMessage());
+    }
+
+
+    // 5️⃣ Return JSON with resume + AI suggestions
     return response()->json([
         'success' => true,
-        'resume' => $result[0]
+        'resume' => [
+            'resume_content' => $resumeContent,
+            'suggestions' => $suggestions
+        ]
     ]);
 }
 
