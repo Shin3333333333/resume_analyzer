@@ -86,8 +86,6 @@
 
                 </div>
             </div>
-    <div id="resumeSuggestions" class="card mt-3 p-3 text-muted" style="display:none;"></div>
-
 </div>
 
 
@@ -150,6 +148,7 @@
 
             </div>
             <!-- END GRID -->
+    <div id="resumeSuggestions" class="card mt-3 p-3 text-muted" style="display:none;"></div>
 
         </div>
     </div>
@@ -261,7 +260,7 @@ form.addEventListener('submit', function(e) {
 
                 if(data.resume.suggestions) {
                     suggestionDiv.style.display = 'block';
-                    suggestionDiv.innerHTML = "<strong>AI Suggestions:</strong><br>" + data.resume.suggestions;
+                    suggestionDiv.innerHTML = "<strong>Burat:</strong><br>" + data.resume.suggestions;
                 } else {
                     suggestionDiv.style.display = 'none';
                 }

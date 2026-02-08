@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use League\CommonMark\CommonMarkConverter;
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser as PdfParser;
 
@@ -91,7 +92,26 @@ class ResumeAnalysisController extends Controller
         ], 500);
     }
 
-    $resumeText = strip_tags($resumeContent); // plain text for AI
+    $resumeText = html_entity_decode($resumeContent, ENT_QUOTES | ENT_HTML5);
+
+    // Remove CSS blocks
+    $resumeText = preg_replace('/@page\s+[^{]+\{[^}]*\}/i', '', $resumeText);
+    $resumeText = preg_replace('/\.[a-zA-Z0-9_-]+\s*\{[^}]*\}/', '', $resumeText);
+
+    // Remove remaining HTML
+    $resumeText = strip_tags($resumeText);
+
+    // Remove Word junk words
+    $resumeText = preg_replace('/(Hyperlink|WordSection\d+|NormalTable)/i', '', $resumeText);
+
+    // Normalize whitespace
+    $resumeText = preg_replace('/\r\n|\r/', "\n", $resumeText);
+    $resumeText = preg_replace('/\n{2,}/', "\n", $resumeText);
+    $resumeText = preg_replace('/\s{2,}/', ' ', $resumeText);
+
+    $resumeText = trim($resumeText);
+
+
     $jobDescription = $request->job_description;
 
     // 4️⃣ Hugging Face AI Suggestions
@@ -120,11 +140,19 @@ class ResumeAnalysisController extends Controller
 
         $body = json_decode($response->getBody()->getContents(), true);
         if (isset($body['choices'][0]['message']['content'])) {
-            $suggestions = $body['choices'][0]['message']['content'];
+            $markdown = $body['choices'][0]['message']['content'];
+
+            $converter = new CommonMarkConverter([
+                'html_input' => 'strip',          // security
+                'allow_unsafe_links' => false,
+            ]);
+
+            $suggestions = $converter->convert($markdown)->getContent();
         }
-    } catch (\Exception $e) {
-        \Log::error('HF AI Error: ' . $e->getMessage());
-    }
+
+            } catch (\Exception $e) {
+                \Log::error('HF AI Error: ' . $e->getMessage());
+            }
 
 
     // 5️⃣ Return JSON with resume + AI suggestions
