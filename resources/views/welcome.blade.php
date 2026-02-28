@@ -24,7 +24,7 @@
                 <div class="auth-feature"><div class="auth-feature-icon" style="background:rgba(52,211,153,.15);color:var(--green)">✅</div> Manage your tasks</div>
                 <div class="auth-feature"><div class="auth-feature-icon" style="background:rgba(251,191,36,.15);color:var(--amber)">🎯</div> Track your goals</div>
             </div>
-            <button class="google-btn" onclick="signIn()">
+            <button class="google-btn" id="google-login-btn">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="google-icon">
                 Sign in with Google
             </button>
@@ -34,13 +34,16 @@
 
     <div id="app">
         @include('layouts.partials._sidebar')
-        <div class="sidebar-overlay"></div>
+        <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
         <div class="main">
             @include('dashboard')
             @include('journal')
             @include('tasks')
             @include('goals')
+            @include('insights')
+            @include('community')
+            @include('leaderboard')
             @include('settings')
         </div>
     </div>

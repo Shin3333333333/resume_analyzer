@@ -15,6 +15,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "bootstrap": "^5.3.8"
+        "bootstrap": "^5.3.8",
+        "firebase": "^12.10.0"
     }
 }
